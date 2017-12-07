@@ -17,13 +17,14 @@ body {
 	background-color: #060606;
 	transition-duration: 2000ms;
 	position: absolute;
-	top: 35%;
+
 	right: 0;
 	left: 0;
 }
 
 body.color-invert {
 	color: black;
+	top: 35%;
 	background-color: #f9f9f9;
 }
 
