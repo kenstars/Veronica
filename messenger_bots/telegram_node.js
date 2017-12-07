@@ -10,7 +10,7 @@ app.use(bodyParser.urlencoded({
 
 //This is the route the API will call
 app.post('/new-message', function(req, res) {
-  const {message} = req.body
+  const message = req.body
 
   //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
 
@@ -40,6 +40,6 @@ app.post('/new-message', function(req, res) {
 });
 
 // Finally, start our server
-app.listen(3000, function() {
-  console.log('Telegram app listening on port 3000!');
+app.listen(8804, function() {
+  console.log('Telegram app listening on port 8804!');
 });
