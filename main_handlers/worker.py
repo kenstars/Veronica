@@ -8,9 +8,9 @@ import traceback
 import re
 import requests
 from nltk import pos_tag
-import spacy
 import urllib
 from time import time
+from helper.feature_extraction import *
 
 WH_WORDS = ["what", "where", "when", "how" , "which", "how", "why", "whose", "who"]
 MODAL_WORDS = ["can", "could", "will", "would", "shall", "should", "might", "may"]
@@ -33,25 +33,6 @@ class ChatHandler():
         response = requests.get("http://localhost:5000/question_classifier",params = payload)
         result = response.json()
         return result["result"]
-    
-    
-    def findSubObject(self, query):
-        parsed_text = self.nlp(query)
-        #get token dependencies
-        subject, direct_object = [],[]
-        for text in parsed_text:
-            print "*"*10
-            print text.dep_
-            print "*"*10
-            #subject would be
-            if "subj" in text.dep_:
-                subject.append(text.orth_)
-            #object
-            if "obj" in text.dep_:
-                direct_object.append(text.orth_)
-        print(subject)
-        print(direct_object)
-        return dict(subject = subject, object = direct_object)
     
     def doesContextExist(self, query):
         print query, type(query)
@@ -145,30 +126,60 @@ class ChatHandler():
             pre_processed_query = re.sub(r"\s+"," ",removed_specials_query)
             pre_processed_query = self.remove_redundant(pre_processed_query)
             redis_data = self.getRedisData(redis_id)
+            print "=-=-"*10,"REDIS AT START", "=-=-"*10
+            print redis_data
+            print "=-=-"*15, "=-=-"*15
             query_type = self.findQueryType(pre_processed_query)
-            context_exists = self.doesContextExist(pre_processed_query)
-            print "context_exists : ", context_exists
-            if not context_exists:
-                print "Query Type : ", query_type
-                if query_type == "interrogative":
-                    answer = self.getAnswer(pre_processed_query)
-                    print "Soln : ", answer
-                    result = answer
-                elif query_type == "assertive":
-                    redis_data["last_query_information"]["asked_question"] = "should_i_learn"
-                    redis_data["last_query_information"]["answer_expected"] = "yes_no"
-                    redis_data["last_query_information"]["query_to_learn"] = pre_processed_query
-                    result = "Should I learn this information"
+            question_asked = redis_data["last_query_information"].get("asked_question")
+            context_exists = False
+            if question_asked:
+                result, redis_data = callFeatureExtractor(question_asked, pre_processed_query, redis_data, self.getAnswer)
+                print result
             else:
-                result = "Sorry, I am not yet trained to handle context questions"
+                context_exists = self.doesContextExist(pre_processed_query)
+                print "context_exists : ", context_exists
+                if not context_exists:
+                    print "Query Type : ", query_type
+                    if query_type == "interrogative":
+                        personal_bool = findIfPersonal(pre_processed_query)
+                        if personal_bool:
+                            answer, redis_data = solr_search(pre_processed_query, redis_data, search_type = "questions")
+                            if answer:
+                                result = answer
+                            else:
+                                answer, redis_data = solr_search(pre_processed_query, redis_data)
+                                print "Soln Solr :", answer
+                        else:
+                            answer = self.getAnswer(pre_processed_query)
+                            print "Soln : ", answer
+                        if answer:
+                            result = answer
+                    elif query_type == "assertive":
+                        question_provided = redis_data.get("question_provided")
+                        if question_provided:
+                            solr_query = dict(questions = question_provided,
+                                              memory = pre_processed_query)
+                            insertSolrchatData(solr_query)
+                            result = "Thank you. I will remember that."
+                            redis_data["question_provided"] = ""
+                            redis_data["last_query_information"] = {}
+                        else:
+                            redis_data["last_query_information"]["asked_question"] = "should_i_learn"
+                            redis_data["last_query_information"]["query_to_learn"] = pre_processed_query
+                            result = "Should I learn this information"
+                else:
+                    result = "Sorry, I am not yet trained to handle context questions"
             # saving into redis
             to_save_in_history = dict(original_query = json_chat_input,
-                                pre_processed_query = json_chat_input,
+                                pre_processed_query = pre_processed_query,
                                 query_type = query_type,
                                 context_exists = context_exists,
                                 response = result)
             redis_data["history"].append(to_save_in_history)
             self.redis_obj.setex(redis_id, self.ttl, json.dumps(redis_data))
+            print "=-=-"*10,"REDIS AT END", "=-=-"*10
+            print redis_data
+            print "=-=-"*15, "=-=-"*15
         except Exception as e:
             print "Exception occurred",e
             print traceback.format_exc()
