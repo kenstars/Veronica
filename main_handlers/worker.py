@@ -180,7 +180,21 @@ class ChatHandler():
             "statemethod":"deploybutton",
             "storesubpodexprs":	True}
 
-        
+
+    #     payload = {
+    #     "action": "recalc",
+    #     "duplicatepodaction" : "read",
+    #     "format" : "image,plaintext,imagemap,minput,moutput",
+    #     "id" : "",
+    #     "output" : "JSON",
+    #     "podinfoasync" : true,
+    #     "redisFailed" : true,
+    #     "s" :"",
+    #     "sbsetails" : true,
+    #     "scantimeout" : 0.5,
+    #     "statemethod" : "deploybutton",
+    #     "storesubpodexprs" :true
+    # } 
         url_jump = url_start+".com/input/json.jsp"
         result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
         print result_jump.text
