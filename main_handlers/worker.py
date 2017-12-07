@@ -57,7 +57,8 @@ class ChatHandler():
         json_out = json.loads(result.text)
         code = json_out["code"]                             
         print code
-        payload=dict(async=True,
+        payload=dict(ts=ts,
+            async=True,
             banners="raw",
             debuggingdata=False,
             format="image,plaintext,imagemap,sound,minput,moutput",
@@ -81,7 +82,7 @@ class ChatHandler():
                    "Referer":refer_url 
                    }
         result = requests.get(url, params = payload,headers = headers)
-        print result.text
+        #print result.text
         json_output = json.loads(result.text)
         pods = json_output["queryresult"].get("pods")
         try:
@@ -90,8 +91,99 @@ class ChatHandler():
         except Exception:
             print "result not found"
             result_info =  "Sorry I couldnt find an answer to your question"
-        return result_info
+            
         
+        #send,json_output = self.recal_function(json_output, headers)
+        # json_output = self.recal_function(json_output, headers)
+        #raw_input("************")
+        #send,json_output = self.recal_next(json_output,headers,send)
+        return result_info
+    
+    def recal_next(self,json_output ,headers,send):
+        
+        recal_id = send["recal_id"]
+        recal_s = send["recal_s"]
+        # url_start = "https://www4d.wolframalpha"
+        url_start = send["url_start"]
+        
+        payload_jump = dict(action="recalc",
+        duplicatepodaction="read",
+        format	="image,plaintext,imagemap,minput,moutput",
+        id=recal_id,
+        output = {0	:"JSON",
+        1:"JSON"},
+        podinfoasync=True,
+        redisFailed	=True,
+        s=recal_s,
+        sbsetails=True,
+        scantimeout=10,
+        statemethod="deploybutton",
+        storesubpodexprs=True)
+        
+        print payload_jump, url_start
+        url_jump = url_start+".com/input/json.jsp"
+        result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
+        print result_jump.text
+        
+        return send,result_jump.text
+        
+    def recal_function(self, json_output, headers):
+        recal_id = 0
+        recal_s = 0
+        send = {}
+        url_start = "https://www4d.wolframalpha"
+        try:
+            recal = json_output["queryresult"].get("recalculate")
+            try:
+                recal_id = recal.split("id=")[1].split("&")[0]
+                recal_s = recal.split("&s=")[1].split("&")[0]
+                url_start = recal.split(".com")[0]
+                print "recal_id",recal_id
+                print "recal_s",recal_s
+            except:
+                print "Error in id"
+        except:
+            print "No recal"
+        
+        payload_jump = {"action":"recalc",
+            "duplicatepodaction":"write",
+            "format":"image,plaintext,imagemap,minput,moutput",
+            "id":recal_id,
+            "output":{
+            "0":"JSON",
+            "1":"JSON"
+            },
+            "podinfoasync":True,
+            "redisFailed":True,
+            "s":recal_s,
+            "sbsetails":True,
+            "scantimeout":0.5,
+            "statemethod":"deploybutton",
+            "storesubpodexprs":	True}
+
+
+    #     payload = {
+    #     "action": "recalc",
+    #     "duplicatepodaction" : "read",
+    #     "format" : "image,plaintext,imagemap,minput,moutput",
+    #     "id" : "",
+    #     "output" : "JSON",
+    #     "podinfoasync" : true,
+    #     "redisFailed" : true,
+    #     "s" :"",
+    #     "sbsetails" : true,
+    #     "scantimeout" : 0.5,
+    #     "statemethod" : "deploybutton",
+    #     "storesubpodexprs" :true
+    # } 
+        url_jump = url_start+".com/input/json.jsp"
+        result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
+        print result_jump.text
+        send["recal_s"] = recal_s
+        send["recal_id"] = recal_id
+        send["url_start"] = url_start
+        return send,result_jump.text
+    
     def remove_redundant(self, query):
         modal_regex = r"\b" + r"\b|\b".join(MODAL_WORDS) + r"\b"
         secondp_regex = r"\b" + r"\b|\b".join(SECOND_PERSON) + r"\b"
@@ -186,11 +278,11 @@ class ChatHandler():
         return json.dumps(result)
 
 if __name__ == '__main__':
-    try:
-        print "waiting for call...."
-        ChatHandler().gm_worker.work()
-    except Exception as e:
-        print traceback.format_exc()
-        print "\nError in main !! ",e,"\n"
-    # tmp = ChatHandler()
-    # print tmp.getAnswer("when did bruce lee die")
+    # try:
+    #     print "waiting for call...."
+    #     ChatHandler().gm_worker.work()
+    # except Exception as e:
+    #     print traceback.format_exc()
+    #     print "\nError in main !! ",e,"\n"
+    tmp = ChatHandler()
+    print tmp.getAnswer("who is the prime minister of India")
