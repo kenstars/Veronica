@@ -1,0 +1,8 @@
+{
+	"serverip":"localhost",
+	"serverport":5000,
+	"gearmanip":"localhost",
+	"gearmanport":4730,
+	"chat_worker":"veronica_worker",
+	"alice_gearman_name":"alice_veronica"
+}
