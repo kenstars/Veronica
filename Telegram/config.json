@@ -1,0 +1,20 @@
+{
+   "gearmanip":"127.0.0.1",
+   "gearmanport":4730,
+   "serverip":"localhost",
+   "serverport":7003,
+   "tcp_type":"websocket",
+   "gearmanworker_apiai":"call_api_ai_kotak",
+   "apiaitoken":"5d27e21f9b834314a9070abc0e69db53",
+   "Telegram":{
+                  "key":"327077570:AAF6c_AszvcoL2pdmR-wl0W_uAnGNlGwJqo"
+               },
+   "slack":{
+                 "key":"xoxb-117950629095-jOpGdmItEBHRTCSP1ZcHY07g"
+              },
+   "collection_name":"db_kotak",
+
+   "idgen_gearman_name" : "kotakgenId",
+   "developer_access_token" : "679e43365863481292e86810924a5409",
+   "initial_msg_worker": "initial_msg_worker_kotak"
+}
