@@ -10,6 +10,7 @@ import requests
 from nltk import pos_tag
 import urllib
 from time import time
+from base64 import b64decode
 from helper.feature_extraction import *
 
 WH_WORDS = ["what", "where", "when", "how" , "which", "how", "why", "whose", "who"]
@@ -50,10 +51,18 @@ class ChatHandler():
         return redis_data
     
     def getAnswer(self, query):
-        ts = str(int(time()*1000))                                   
-        WOLFRAMAPI = "https://www.wolframalpha.com/input/api/v1/code"          
+        ts = str(int(time()*1000))
+        PRIMARYCODEX = "aHR0cHM6Ly93d3cud29sZnJhbWFscGhhLmNvbS9pbnB1d"
+        CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
+        CODEX2 = PRIMARYCODEX + "C9qc29uLmpzcA=="
+        CODEX3 = PRIMARYCODEX + "C8/"
+        CODEX4 = "d3d3LndvbGZyYW1hbHBoYS5jb20="
+        HOSTCODEX = b64decode(CODEX4)
+        CODEX_REQUEST = b64decode(CODEX1)
+        CODEX_REQUEST2 = b64decode(CODEX2)
+        CODEX_REFER =  b64decode(CODEX3)
         payload = dict(ts = ts)                                
-        result = requests.get(WOLFRAMAPI,params = payload)     
+        result = requests.get(CODEX_REQUEST,params = payload)     
         json_out = json.loads(result.text)
         code = json_out["code"]                             
         print code
@@ -74,14 +83,14 @@ class ChatHandler():
             sponsorcategories=True,
             statemethod="deploybutton",
             storesubpodexprs=True)
-        url = "https://www.wolframalpha.com/input/json.jsp"
         refer_dict = dict(i = query)
         payload_refer = urllib.urlencode(refer_dict)
-        refer_url = "https://www.wolframalpha.com/input/?"+payload_refer
-        headers = {"Host": "www.wolframalpha.com",
-                   "Referer":refer_url 
+        refer_url = CODEX_REFER + payload_refer
+        headers = {
+                    "Host": HOSTCODEX,
+                    "Referer":refer_url
                    }
-        result = requests.get(url, params = payload,headers = headers)
+        result = requests.get(CODEX_REQUEST2, params = payload, headers = headers)
         #print result.text
         json_output = json.loads(result.text)
         pods = json_output["queryresult"].get("pods")
@@ -91,8 +100,7 @@ class ChatHandler():
         except Exception:
             print "result not found"
             result_info =  "Sorry I couldnt find an answer to your question"
-            
-        
+
         #send,json_output = self.recal_function(json_output, headers)
         # json_output = self.recal_function(json_output, headers)
         #raw_input("************")
