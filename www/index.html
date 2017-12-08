@@ -18,10 +18,11 @@
 		<script src="http://responsivevoice.org/responsivevoice/responsivevoice.js"></script>
 		<script src="js/socket.js"></script>
 		<script type="text/javascript" src="static/main.js"></script>
-		
+
 		<title>Veronica Beta</title>
 		<script>
 			$(document).ready(function() {
+
 				$(document.body).on("selectstart", function() {
 					return false;
 				});
@@ -38,7 +39,13 @@
 		</script>
 	</head>
 
-	<body class="color-invert">
+	<body class="color-invert" style="top:20px">
+		<div id="weather_data" style="position:absolute;top:10px;right:50px; font-style: italic; font-size: 90%;">
+			 Date:<div id="date"></div><br>
+			Location:<div id="loc">  </div><br>
+			Temperature:<div id="temp">  </div>
+
+		</div>
 		<div id="veronica" class="mode-text">
 			<div class="text hidden">-</div>
 			<div class="line"></div>

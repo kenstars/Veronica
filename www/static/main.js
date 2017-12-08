@@ -89,7 +89,7 @@ function startConverting (start = 0) {
                 $("#mic_off").show();
                 $("#mic_on").hide();
                 console.log('Speech has stopped being detected');
-                
+
             };
             window.speechRecognizer.onerror = function (event) {
                 window.speechRecognizer.stop();
@@ -98,17 +98,33 @@ function startConverting (start = 0) {
                 console.log("error: ",event.error);
             };
             window.speechRecognizer.start();
-            
+
         }else{
             window.speechRecognizer.stop();
             //r.innerHTML = 'Your browser is not supported. If google chrome, please upgrade!';
             console.log("Either you have stopped recognition or Your browser is not supported. If google chrome, please upgrade!");
         }
-        
+
     }
+
+    socket.on('send_append_data', function(data){
+      console.log("data received");
+      var today= new Date();
+      var date = today.getDate()+"/"+(today.getMonth()+1) +"/"+today.getFullYear();
+      document.getElementById("date").innerHTML = date;
+      document.getElementById("loc").innerHTML = data.loc;
+      document.getElementById("temp").innerHTML = data.temp;
+        });
 
 
 $(document).ready(function() {
+  $.getJSON('//freegeoip.net/json/?callback=?', function(data) {
+    console.log(JSON.stringify(data, null, 2),"its location_details");
+    location_details = data.city;
+    console.log("catched location_details", location_details);
+    socket.emit('send_ip_details',{"city":location_details});
+
+  });
 
 	// veronica
 
@@ -117,7 +133,7 @@ $(document).ready(function() {
 	var $veronica_line = $("#veronica .line");
 	var $veronica_arrow = $("#veronica .arrow");
 	var $veronica_message_box = $("#veronica .message-box");
-	startConverting(start = 1); 
+	startConverting(start = 1);
 	var veronica = window.veronica = { }
 	var timeout = 0;
 
@@ -195,7 +211,7 @@ $(document).ready(function() {
 	}
 
 	// other
-    
+
 	window.audioSetTimeEvents = function(audio, events) {
 		$(audio).on("timeupdate", function() {
 			for (var key in events) {
