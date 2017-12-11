@@ -116,6 +116,19 @@ function startConverting (start = 0) {
       document.getElementById("temp").innerHTML = data.temp;
         });
 
+    socket.on('send_news_feeds', function(data){
+      console.log("inside news feed",typeof(data));
+      var dataLength = data.length;
+      var text = ""
+      for (i = 0; i < dataLength; i++) {
+        text = data[i][0] + "<br>";
+        $('#news_feed').append("<li><a href="+data[i][1]+">"+data[i][0]+"<a/></li>");
+        // document.getElementById("news_feed").innerHTML = text;
+        }
+      console.log(dataLength,"length of data");
+      // for (){}
+    });
+
 
 $(document).ready(function() {
   $.getJSON('//freegeoip.net/json/?callback=?', function(data) {
@@ -123,6 +136,7 @@ $(document).ready(function() {
     location_details = data.city;
     console.log("catched location_details", location_details);
     socket.emit('send_ip_details',{"city":location_details});
+    socket.emit('send_newfeed_call',{});
 
   });
 

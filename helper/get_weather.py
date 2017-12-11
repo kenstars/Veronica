@@ -8,17 +8,11 @@ import json
 #
 print "connecting to server"
 
-# socketIO = SocketIO(self.config["serverip"], self.config["serverport"])
-# print "connected to server"
-
-# gm_client = gearman.GearmanClient([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"])])
-
 class WeatherData():
     def __init__(self):
         self.config = json.load(open("./config.json", "r"))
         self.gm_worker = gearman.GearmanWorker([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"])])
         self.gm_worker.register_task('send_location_details', self.get_weather)
-
 
     def get_weather(self, gearman_worker, gearman_job):
         print "inside get weather", json.loads(gearman_job.data)
@@ -42,15 +36,3 @@ class WeatherData():
 if __name__=="__main__":
     obj = WeatherData()
     obj.gm_worker.work()
-
-# def get_weather(data):
-#     print "inside get weather"
-#
-#
-# try:
-#     socketIO.on('send_location_details',get_weather)
-#     print "called get weather"
-#     socketIO.wait()
-#     # print weather_json["name"],":", weather_json["main"]["temp"],weather_json["main"]["humidity"]
-# except Exception as e:
-#     print "Exception occured"
