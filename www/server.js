@@ -51,6 +51,30 @@ io = require('socket.io').listen(serverPort).sockets.on('connection', function (
     console.log(error.message); // gnirts tset
     });
   });
+
+  socket.on('send_newfeed_call', function(data){
+    console.log("inside server for newsfeed call");
+    console.log(JSON.stringify(data));
+    socket_id = socket.id;
+    // var data = JSON.parse(data);
+    // data.socket_id = socket.id;
+    //   console.log("data after socket_id");
+    console.log(JSON.stringify(data));
+    job = client.submitJob("call_for_newsfeed",JSON.stringify(data));
+
+    job.on("data", function(data){
+    console.log("inside newsfeed job data"+data.toString("utf-8")); // gnirts tset
+    socket.emit("send_news_feeds", JSON.parse(data));
+    });
+    job.on("end", function(){
+    console.log("job completed"); // gnirts tset
+    });
+    job.on("error", function(error){
+      console.log("inside newsfeed error");
+    console.log(error.message); // gnirts tset
+    });
+  });
+
   socket.on('receive_data',function(data){
       console.log("in receive_data");
       console.log(data);

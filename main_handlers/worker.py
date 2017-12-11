@@ -28,13 +28,13 @@ class ChatHandler():
         self.ttl = 88000
         # self.nlp = spacy.load('en')
         print "initialising complete"
-        
+
     def findQueryType(self, query):
         payload = dict(text = query)
         response = requests.get("http://localhost:5000/question_classifier",params = payload)
         result = response.json()
         return result["result"]
-    
+
     def doesContextExist(self, query):
         print query, type(query)
         tokens = query.split()
@@ -42,14 +42,14 @@ class ChatHandler():
         found_pronouns = filter(lambda x:x[1] == "PRP" and x[0] not in ["i","you"], tagged_tokens)
         print found_pronouns
         return bool(found_pronouns)
-    
+
     def getRedisData(self, redis_id):
         try:
             redis_data = json.loads(self.redis_obj.get(redis_id))
         except Exception as f:
             redis_data = json.load(open("db/redis_default.json"))
         return redis_data
-    
+
     def getAnswer(self, query):
         ts = str(int(time()*1000))
         PRIMARYCODEX = "aHR0cHM6Ly93d3cud29sZnJhbWFscGhhLmNvbS9pbnB1d"
@@ -61,10 +61,10 @@ class ChatHandler():
         CODEX_REQUEST = b64decode(CODEX1)
         CODEX_REQUEST2 = b64decode(CODEX2)
         CODEX_REFER =  b64decode(CODEX3)
-        payload = dict(ts = ts)                                
-        result = requests.get(CODEX_REQUEST,params = payload)     
+        payload = dict(ts = ts)
+        result = requests.get(CODEX_REQUEST,params = payload)
         json_out = json.loads(result.text)
-        code = json_out["code"]                             
+        code = json_out["code"]
         print code
         payload=dict(ts=ts,
             async=True,
@@ -106,14 +106,14 @@ class ChatHandler():
         #raw_input("************")
         #send,json_output = self.recal_next(json_output,headers,send)
         return result_info
-    
+
     def recal_next(self,json_output ,headers,send):
-        
+
         recal_id = send["recal_id"]
         recal_s = send["recal_s"]
         # url_start = "https://www4d.wolframalpha"
         url_start = send["url_start"]
-        
+
         payload_jump = dict(action="recalc",
         duplicatepodaction="read",
         format	="image,plaintext,imagemap,minput,moutput",
@@ -127,14 +127,14 @@ class ChatHandler():
         scantimeout=10,
         statemethod="deploybutton",
         storesubpodexprs=True)
-        
+
         print payload_jump, url_start
         url_jump = url_start+".com/input/json.jsp"
         result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
         print result_jump.text
-        
+
         return send,result_jump.text
-        
+
     def recal_function(self, json_output, headers):
         recal_id = 0
         recal_s = 0
@@ -152,7 +152,7 @@ class ChatHandler():
                 print "Error in id"
         except:
             print "No recal"
-        
+
         payload_jump = {"action":"recalc",
             "duplicatepodaction":"write",
             "format":"image,plaintext,imagemap,minput,moutput",
@@ -183,7 +183,7 @@ class ChatHandler():
     #     "scantimeout" : 0.5,
     #     "statemethod" : "deploybutton",
     #     "storesubpodexprs" :true
-    # } 
+    # }
         url_jump = url_start+".com/input/json.jsp"
         result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
         print result_jump.text
@@ -191,7 +191,7 @@ class ChatHandler():
         send["recal_id"] = recal_id
         send["url_start"] = url_start
         return send,result_jump.text
-    
+
     def remove_redundant(self, query):
         modal_regex = r"\b" + r"\b|\b".join(MODAL_WORDS) + r"\b"
         secondp_regex = r"\b" + r"\b|\b".join(SECOND_PERSON) + r"\b"
@@ -212,7 +212,7 @@ class ChatHandler():
             if information_asked:
                 return action_query
         return query
-        
+
     def userQuery(self, gm_job, gm_obj):
         print "in userQuery"
         try:
@@ -286,11 +286,11 @@ class ChatHandler():
         return json.dumps(result)
 
 if __name__ == '__main__':
-    # try:
-    #     print "waiting for call...."
-    #     ChatHandler().gm_worker.work()
-    # except Exception as e:
-    #     print traceback.format_exc()
-    #     print "\nError in main !! ",e,"\n"
-    tmp = ChatHandler()
-    print tmp.getAnswer("who is the prime minister of India")
+    try:
+        print "waiting for call...."
+        ChatHandler().gm_worker.work()
+    except Exception as e:
+        print traceback.format_exc()
+        print "\nError in main !! ",e,"\n"
+    # tmp = ChatHandler()
+    # print tmp.getAnswer("who is the prime minister of India")
