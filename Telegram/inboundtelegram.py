@@ -39,8 +39,10 @@ class first_bot:
         print queryobj
         completed_task = self.gm_client.submit_job(str(config["gearmanworker_veronica"]),json.dumps(queryobj))
         result = json.loads(completed_task.result)
+        print "^-^"*30
+        print result
         if completed_task.state == 'COMPLETE':
-            answer_text = result['response_text']
+            answer_text = result['response']
             print result
             # answer_text = html2text.html2text(answer_text)
             answer_text = answer_text.replace('<br>','\n')

@@ -43,12 +43,14 @@ def learnInformation(*args):
     return response, redis_data
 
 def findIfPersonal(*args):
-    print "in findIfPersonal"
     query = args[0]
-    possessive_words = ["me", "my", "mine", "i"]
-    possessive_regex = r"\b" + "\b|\b".join(possessive_words) + r"\b"
+    print "in findIfPersonal the query is>>>>>>>", query
+    possessive_regex = r"\bme\b|\bmy\b|\bmine\b|\bi\b"
+    # possessive_regex = r"\b" + r"\b|\b".join(possessive_words) + r"\b"
+    # possessive_regex.decode("string_escape")
+    print "possessive_regex>>>", possessive_regex
     result = re.findall(possessive_regex, query)
-    print result
+    print "findIfPersonal result>>>", result
     return bool(result)
 
 def lookUpOnline(*args):
@@ -93,18 +95,20 @@ def CompareSentences(input_value1, input_value2):
     print outcome1
     result2 = spacy_client.submit_job(str(config["spacy"]),json.dumps(dict(query = input_value2, query_type = "answer")))
     outcome2 = json.loads(result2.result)
-    print input_value2
-    print outcome2
+    print "input_value2>>>", input_value2
+    print "outcome2>>>", outcome2
     matched_results = len(list(set(outcome1).intersection(outcome2)))
+    print "matched_results>>>", matched_results
     result_value = set(outcome2) - set(outcome1)
     return matched_results == 2, list(result_value)
     
 def solr_search(query, redis_data, search_type = "memory"):
     print "\n\n\n ==============in solr_search========== \n\n\n\n"
-    new_query = re.sub(r"[^a-zA-Z0-9]","", query)
+    new_query = re.sub(r"[^a-zA-Z0-9 ]","", query)
     ans_dict = {}
     search_results = []
-    solr_query = search_type+": " + query
+    solr_query = search_type+": " + new_query
+    print "solr_query>>>",  solr_query
     try :
         response = ""
         solr_url = pysolr.Solr('http://localhost:8983/solr/veronica', timeout = 20)
@@ -115,6 +119,7 @@ def solr_search(query, redis_data, search_type = "memory"):
                 result_query = re.sub(r"[^a-zA-Z0-9 ]","",result['memory'])
                 print query,"####", result_query
                 boolean_outcome, outcomes = CompareSentences(query, result_query)
+                print "boolean_outcome>>>>", boolean_outcome, "outcomes>>>>", outcomes 
                 if boolean_outcome:
                     result_variables.extend(outcomes)
             if result_variables:
