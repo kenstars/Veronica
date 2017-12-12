@@ -250,7 +250,7 @@ class ChatHandler():
             json_input = json.loads(gm_data)
             json_chat_input = str(json_input["input_text"].lower())
             redis_id = json_input["redis_id"]
-            removed_specials_query = re.sub(r"[^A-Za-z0-9]"," ",json_chat_input)
+            removed_specials_query = re.sub(r"[^A-Za-z0-9 +-/*]"," ",json_chat_input)
             pre_processed_query = re.sub(r"\s+"," ",removed_specials_query)
             pre_processed_query = self.remove_redundant(pre_processed_query)
             redis_data = self.getRedisData(redis_id)
@@ -262,7 +262,7 @@ class ChatHandler():
             context_exists = False
             if question_asked:
                 result, redis_data = callFeatureExtractor(question_asked, pre_processed_query, redis_data, self.getAnswer)
-                print result
+                print "result in question_asked>>>>>", result
             else:
                 context_exists = self.doesContextExist(pre_processed_query)
                 print "context_exists : ", context_exists
@@ -270,6 +270,7 @@ class ChatHandler():
                     print "Query Type : ", query_type
                     if query_type == "interrogative":
                         personal_bool = findIfPersonal(pre_processed_query)
+                        print "personal_bool>>", personal_bool
                         if personal_bool:
                             answer, redis_data = solr_search(pre_processed_query, redis_data, search_type = "questions")
                             if answer:
@@ -311,8 +312,7 @@ class ChatHandler():
         except Exception as e:
             print "Exception occurred",e
             print traceback.format_exc()
-        return json.dumps(result)   
-    
+        return json.dumps(dict(response=result, question_keywords=""))
 if __name__ == '__main__':
     #try:
     #    print "waiting for call...."

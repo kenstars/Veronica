@@ -11,7 +11,7 @@ class SpacemanSpiff():
         self.gm_worker = gearman.GearmanWorker([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"]) ])
         self.gm_client = gearman.GearmanClient([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"]) ])
         self.gm_worker.register_task(str(self.config["spacy"]), self.findSubObject)
-        self.nlp = spacy.load('en')
+        self.nlp = spacy.load('en_md')
         print "Spacy initialising complete"
 
     def findSubObject(self, gm_job, gm_object):

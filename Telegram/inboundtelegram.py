@@ -35,12 +35,14 @@ class first_bot:
         else:
             ChatMsg = update.message.text
             custInfo = {'FirstName':update.message['chat']['first_name'],"LastName":update.message['chat']['last_name']}
-            queryobj = {"customer_info":custInfo,"query":ChatMsg,"v":"20150910","confidence":0.5,"uId":str(update.message.chat_id),"lang":'en',"channel":"telegram"}
+            queryobj = {"customer_info":custInfo,"input_text":ChatMsg,"v":"20150910","confidence":0.5,"uId":str(update.message.chat_id),"lang":'en',"channel":"telegram", "redis_id":"admin"}
         print queryobj
-        completed_task = self.gm_client.submit_job(str(config["gearmanworker_apiai"]),json.dumps(queryobj))
+        completed_task = self.gm_client.submit_job(str(config["gearmanworker_veronica"]),json.dumps(queryobj))
         result = json.loads(completed_task.result)
+        print "^-^"*30
+        print result
         if completed_task.state == 'COMPLETE':
-            answer_text = result['response_text']
+            answer_text = result['response']
             print result
             # answer_text = html2text.html2text(answer_text)
             answer_text = answer_text.replace('<br>','\n')
@@ -98,7 +100,7 @@ class first_bot:
                     r = requests.post(self.TELEGRAM_URL + "sendMessage", data=dict(chat_id=CHAT_ID,text=answer_text,reply_markup=buttonvalues))
                 else:
                     print update['id']
-                    answer_text = "This request requires advanced features currently not supported in inline queries within Telegram. Please visit us at @kotakSupportbot for Answers to your queries"
+                    answer_text = "This request requires advanced features currently not supported in inline queries within Telegram. Please visit us at @veronica_light_bot for Answers to your queries"
                     if len(answer_text) >61:
                         title = answer_text[:60]+'...'
                     else:
