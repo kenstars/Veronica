@@ -12,6 +12,7 @@ import urllib
 from time import time
 from base64 import b64decode
 from helper.feature_extraction import *
+import xmltodict
 
 WH_WORDS = ["what", "where", "when", "how" , "which", "how", "why", "whose", "who"]
 MODAL_WORDS = ["can", "could", "will", "would", "shall", "should", "might", "may"]
@@ -51,6 +52,7 @@ class ChatHandler():
         return redis_data
 
     def getAnswer(self, query):
+        print "in getAnswer"
         ts = str(int(time()*1000))
         PRIMARYCODEX = "aHR0cHM6Ly93d3cud29sZnJhbWFscGhhLmNvbS9pbnB1d"
         CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
@@ -65,7 +67,9 @@ class ChatHandler():
         result = requests.get(CODEX_REQUEST,params = payload)
         json_out = json.loads(result.text)
         code = json_out["code"]
+        print "#"*10
         print code
+        print "#"*10
         payload=dict(ts=ts,
             async=True,
             banners="raw",
@@ -91,7 +95,7 @@ class ChatHandler():
                     "Referer":refer_url
                    }
         result = requests.get(CODEX_REQUEST2, params = payload, headers = headers)
-        #print result.text
+        print result.text
         json_output = json.loads(result.text)
         pods = json_output["queryresult"].get("pods")
         try:
@@ -100,20 +104,46 @@ class ChatHandler():
         except Exception:
             print "result not found"
             result_info =  "Sorry I couldnt find an answer to your question"
-
-        #send,json_output = self.recal_function(json_output, headers)
+        else:
+            return result_info
+        if json_output["queryresult"]["id"]:
+            send,xml_output = self.recal_function(json_output, headers)
+            json_output = xmltodict.parse(xml_output)
+            print "*"*10
+            stringified_output = json.dumps(json_output)
+            print "*"*10
+            if stringified_output:
+                result_info = self.makeAnswer(stringified_output, query )
+            else:
+                 print "No answer found"
+                 result_info = "0"
+        return result_info
         # json_output = self.recal_function(json_output, headers)
         #raw_input("************")
         #send,json_output = self.recal_next(json_output,headers,send)
-        return result_info
+
+    def makeAnswer(self, stringified_output, query):
+        input_value = json.loads(stringified_output)
+        pods = input_value["pod"]
+        input_interpretation = filter(lambda x:x["@title"].lower() == "input interpretation", pods)
+        input_text =  input_interpretation["plain_text"]
+        if input_text in query:
+            for each in pods:
+                if each["@title"].lower() == "notable_facts":
+                    result["1_notable_facts"] = each
+                elif each["@title"].lower() == "image":
+                    result["2_image"] = each["@async"]
+                elif each["@title"].lower() == "basic information":
+                     tmp = re.sub("\(.+?\)","",each["plain_text"])
+                     result["0_basic_info"] = dict([each.split("|") for each in tmp.split("\n")])
+            input_text = result
+        return input_text
 
     def recal_next(self,json_output ,headers,send):
-
         recal_id = send["recal_id"]
         recal_s = send["recal_s"]
         # url_start = "https://www4d.wolframalpha"
         url_start = send["url_start"]
-
         payload_jump = dict(action="recalc",
         duplicatepodaction="read",
         format	="image,plaintext,imagemap,minput,moutput",
@@ -127,12 +157,10 @@ class ChatHandler():
         scantimeout=10,
         statemethod="deploybutton",
         storesubpodexprs=True)
-
-        print payload_jump, url_start
+        # print payload_jump, url_start
         url_jump = url_start+".com/input/json.jsp"
         result_jump = requests.get(url_jump, params = payload_jump, headers = headers)
-        print result_jump.text
-
+        xml_output = result_jump.text
         return send,result_jump.text
 
     def recal_function(self, json_output, headers):
@@ -283,14 +311,14 @@ class ChatHandler():
         except Exception as e:
             print "Exception occurred",e
             print traceback.format_exc()
-        return json.dumps(result)
-
+        return json.dumps(result)   
+    
 if __name__ == '__main__':
-    try:
-        print "waiting for call...."
-        ChatHandler().gm_worker.work()
-    except Exception as e:
-        print traceback.format_exc()
-        print "\nError in main !! ",e,"\n"
-    # tmp = ChatHandler()
-    # print tmp.getAnswer("who is the prime minister of India")
+    #try:
+    #    print "waiting for call...."
+    #    ChatHandler().gm_worker.work()
+    #except Exception as e:
+    #    print traceback.format_exc()
+    #    print "\nError in main !! ",e,"\n"
+    tmp = ChatHandler()
+    print tmp.getAnswer("who invented the bicycle")
