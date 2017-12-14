@@ -1,9 +1,12 @@
 {
 	"serverip":"localhost",
-	"serverport":5000,
+	"serverport":5006,
 	"gearmanip":"localhost",
 	"gearmanport":4730,
 	"chat_worker":"veronica_worker",
 	"alice_gearman_name":"alice_veronica",
-	"spacy":"spacy_veronica"
+	"spacy":"spacy_veronica",
+        "Telegram":{
+                       "key":"468240606:AAF1jKq2yW2M6xXD3oWvnal9XOJKsnhLg6w"
+}
 }

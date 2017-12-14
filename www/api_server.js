@@ -14,7 +14,7 @@ app.get('/question_classifier', function (req, res) {
   res.status(200).json({ result: classification_result });
 })
 
-var server = app.listen(5000, function () {
+var server = app.listen(5006, function () {
 
   var host = server.address().address
   var port = server.address().port

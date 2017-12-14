@@ -17,7 +17,7 @@ import xmltodict
 WH_WORDS = ["what", "where", "when", "how" , "which", "how", "why", "whose", "who"]
 MODAL_WORDS = ["can", "could", "will", "would", "shall", "should", "might", "may"]
 SECOND_PERSON = ["you", "thou"]
-
+ALIAS_CODEX = "V29sZnJhbXxBbHBoYQ=="
 class ChatHandler():
     def __init__(self):
         with open('config.json','r') as filename:
@@ -28,11 +28,12 @@ class ChatHandler():
         self.redis_obj = redis.StrictRedis(host = 'localhost', port = 6379, db = 1)
         self.ttl = 88000
         # self.nlp = spacy.load('en')
+        self.basic_utterances = dict(greetings = ["hi", "hello", "greetings", "hey", "hola", "good morning", "good afternoon", "good evening"])
         print "initialising complete"
-
+    
     def findQueryType(self, query):
         payload = dict(text = query)
-        response = requests.get("http://localhost:5000/question_classifier",params = payload)
+        response = requests.get("http://localhost:5006/question_classifier",params = payload)
         result = response.json()
         return result["result"]
 
@@ -55,12 +56,12 @@ class ChatHandler():
         print "in getAnswer"
         ts = str(int(time()*1000))
         PRIMARYCODEX = "aHR0cHM6Ly93d3cud29sZnJhbWFscGhhLmNvbS9pbnB1d"
-        # CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
+        CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
         CODEX2 = PRIMARYCODEX + "C9qc29uLmpzcA=="
         CODEX3 = PRIMARYCODEX + "C8/"
         CODEX4 = "d3d3LndvbGZyYW1hbHBoYS5jb20="
         HOSTCODEX = b64decode(CODEX4)
-        # CODEX_REQUEST = b64decode(CODEX1)
+        CODEX_REQUEST = b64decode(CODEX1)
         CODEX_REQUEST2 = b64decode(CODEX2)
         CODEX_REFER =  b64decode(CODEX3)
         payload = dict(ts = ts)
@@ -186,7 +187,6 @@ class ChatHandler():
                 print "Error in id"
         except:
             print "No recal"
-
         payload_jump = {"action":"recalc",
             "duplicatepodaction":"write",
             "format":"image,plaintext,imagemap,minput,moutput",
@@ -246,11 +246,63 @@ class ChatHandler():
             if information_asked:
                 return action_query
         return query
-
+   
+    def getGreetResponse(self, redis_data):
+        frequent_actions = redis_data.get("frequent_actions")
+        if not frequent_actions:
+           response = "Hello , How may I help you today"
+        else:
+           timestamp = int(time.time())
+           timestamp_range = range(timestamp - 1800, timestamp + 1800)
+           time_based_actions = frequent_actions.get("time_based_actions")
+           time_actions = [each for each in time_based_actions if each["timestamp"] in timestamp_range]
+           if time_actions:
+              result_action = max(time_actions, key = lambda x:x["count"])
+           else:
+              result_action = max(frequent_actions["all_actions"], key = lambda x:x["count"])
+           response = "Hello , Would you like me to find out "+ result_action["response_message"]
+        return response
+ 
+    def respondToGreet(self, query, redis_data):
+        query = query.lower()
+        greetings =  self.basic_utterances["greetings"]:
+        if query.strip() in greetings:
+           response = self.getGreetResponse(redis_data)
+        else:
+           response = ""
+        return response
+    def setFrequent(self, query, answer, redis_data):
+        result_action = {}
+        result_action["response_message"] = query
+        frequent_actions = redis_data.get("frequent_actions",{})
+        all_actions = frequent_actions.get("all_actions",{})
+        set_flag = False
+        for actions in all_actions:
+            if actions["response_message"] == query:
+               actions["count"] += 1
+               set_flag = True
+        if not set_flag:
+            result_action["count"] = 1
+            all_actions.append(result_action)
+        frequent_actions["all_actions"] = all_actions
+        redis_data["frequent_actions"] = frequent_actions
+        time_based_actions = redis_data.get("time_based_actions",{})
+        timestamp = int(time.time())
+        timestamp_range(timestamp - 1800, timestamp + 1800)
+        set_flag = False
+        for each in time_based_actions:
+            if each["response_message"] == query and each["timestamp"] in timestamp_range:
+                each["count"] += 1
+                set_flag = True
+        if not set_flag:
+            time_based_actions.append(dict(count = 1, response_message = query, timestamp = timestamp))
+            
+        return redis_data
+           
     def userQuery(self, gm_job, gm_obj):
         print "in userQuery"
         try:
-            result = {"result":"error"}
+            response = {"result":"error"}
             current_data = {}
             gm_data = gm_obj.data
             json_input = json.loads(gm_data)
@@ -263,6 +315,7 @@ class ChatHandler():
             print "=-=-"*10,"REDIS AT START", "=-=-"*10
             print redis_data
             print "=-=-"*15, "=-=-"*15
+            greetings_check = self.respondToGreet(pre_processed_query, redis_data)
             query_type = self.findQueryType(pre_processed_query)
             question_asked = redis_data["last_query_information"].get("asked_question")
             context_exists = False
@@ -288,6 +341,7 @@ class ChatHandler():
                             answer = self.getAnswer(pre_processed_query)
                             print "Soln : ", answer
                         if answer:
+                            redis_data = self.setFrequent(pre_processed_query, answer, redis_data)
                             result = answer
                     elif query_type == "assertive":
                         question_provided = redis_data.get("question_provided")
@@ -318,11 +372,17 @@ class ChatHandler():
         except Exception as e:
             print "Exception occurred",e
             print traceback.format_exc()
+        alias = b64decode(ALIAS_CODEX)
+        if alias in result:
+            result = result.replace(alias,"Veronica")
         return json.dumps(dict(response=result, question_keywords=""))
+
 if __name__ == '__main__':
-    try:
-       print "waiting for call...."
-       ChatHandler().gm_worker.work()
-    except Exception as e:
-       print traceback.format_exc()
-       print "\nError in main !! ",e,"\n"
+     try:
+         print "waiting for call...."
+         ChatHandler().gm_worker.work()
+     except Exception as e:
+         print traceback.format_exc()
+         print "\nError in main !! ",e,"\n"
+    #tmp = ChatHandler()
+    #print tmp.getAnswer("who is the prime minister of India")

@@ -9,16 +9,18 @@ import re
 import requests
 from uuid import uuid4
 config = json.load(open('config.json','r'))
-AUTH_TOKEN = config['Telegram']['key']
+AUTH_TOKEN = str(config['Telegram']['key'])
 
 class first_bot:
     def __init__(self):
+        self.TELEGRAM_URL = 'https://api.telegram.org/bot'+str(config['Telegram']['key'])+'/'
+        print self.TELEGRAM_URL
         self.updater = Updater(token = AUTH_TOKEN )
         self.dispatcher = self.updater.dispatcher
         self.gm_client = gearman.GearmanClient(  [  config['gearmanip']+':'+str(config['gearmanport']) ] )
         logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level = logging.INFO )
-        self.TELEGRAM_URL = 'https://api.telegram.org/bot'+str(config['Telegram']['key'])+'/'
         self.prevQuery = ''
+    
     def run(self, bot_value, update_value):
         global bot
         global update
@@ -30,7 +32,7 @@ class first_bot:
             print "update>>>>>", update
             ChatMsg = update['message']['text']
             custInfo = {'FirstName':update['from']['first_name'],"LastName":update['from']['last_name']}
-            queryobj = {"customer_info":custInfo,"query":ChatMsg,"v":"20150910","confidence":0.5,"uId":str(update['from']['id']),"lang":'en',"channel":"telegram"}
+            queryobj = {"customer_info":custInfo,"input_text":ChatMsg,"v":"20150910","confidence":0.5,"redis_id":str(update['from']['id']),"lang":'en',"channel":"telegram"}
             received_InlineQuery = True
         else:
             ChatMsg = update.message.text
@@ -142,7 +144,7 @@ class first_bot:
 
 if __name__ == '__main__':
         telebot = first_bot()
-        echo_handler = MessageHandler([Filters.text],telebot.run)
+        echo_handler = MessageHandler([Filters.text], telebot.run)
         telebot.dispatcher.add_handler(CallbackQueryHandler(telebot.buttonMethod))
         inline_caps_handler = InlineQueryHandler(telebot.inlineQuery)
         telebot.dispatcher.add_handler(inline_caps_handler)

@@ -8,19 +8,23 @@ class SpacemanSpiff():
     def __init__(self):
         with open('config.json','r') as filename:
             self.config = json.load(filename)
-        self.gm_worker = gearman.GearmanWorker([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"]) ])
-        self.gm_client = gearman.GearmanClient([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"]) ])
+        self.gm_worker = gearman.GearmanWorker([ str("localhost") +":"+ str("4730") ])
+        self.spacy_client = gearman.GearmanClient([ str(self.config["gearmanip"]) +":"+ str(self.config["gearmanport"]) ])
         self.gm_worker.register_task(str(self.config["spacy"]), self.findSubObject)
         self.nlp = spacy.load('en_md')
         print "Spacy initialising complete"
 
     def findSubObject(self, gm_job, gm_object):
+        print json.loads(gm_object.data)
         try:
             json_data = json.loads(gm_object.data)
             query = json_data["query"]
             query_type = json_data["query_type"]
             print query, type(query)
-            parsed_text = self.nlp(query)
+            #parsed_text = self.nlp(query)
+            parsed_text = self.spacy_client.submit_job("spacy_focus_word_worker", json.dumps(dict(query=query)))
+            parsed_text = parsed_text.result
+            print "Parsed Text>>>>", parsed_text
             #get token dependencies
             subject, direct_object = [],[]
             ROOT_VALUE = []
