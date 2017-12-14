@@ -55,12 +55,12 @@ class ChatHandler():
         print "in getAnswer"
         ts = str(int(time()*1000))
         PRIMARYCODEX = "aHR0cHM6Ly93d3cud29sZnJhbWFscGhhLmNvbS9pbnB1d"
-        CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
+        # CODEX1 = PRIMARYCODEX + "C9hcGkvdjEvY29kZQ=="
         CODEX2 = PRIMARYCODEX + "C9qc29uLmpzcA=="
         CODEX3 = PRIMARYCODEX + "C8/"
         CODEX4 = "d3d3LndvbGZyYW1hbHBoYS5jb20="
         HOSTCODEX = b64decode(CODEX4)
-        CODEX_REQUEST = b64decode(CODEX1)
+        # CODEX_REQUEST = b64decode(CODEX1)
         CODEX_REQUEST2 = b64decode(CODEX2)
         CODEX_REFER =  b64decode(CODEX3)
         payload = dict(ts = ts)
@@ -71,22 +71,24 @@ class ChatHandler():
         print code
         print "#"*10
         payload=dict(ts=ts,
-            async=True,
-            banners="raw",
-            debuggingdata=False,
-            format="image,plaintext,imagemap,sound,minput,moutput",
-            formattimeout=8,
-            input=query,
-            output="JSON",
-            parsetimeout=5,
-            podinfosasync=True,
-            proxycode=code,
-            recalcscheme="parallel",
-            sbsdetails=True,
-            scantimeout=0.5,
-            sponsorcategories=True,
-            statemethod="deploybutton",
-            storesubpodexprs=True)
+                async=True,
+                banners="raw",
+                debuggingdata=False,
+                format="image,plaintext,imagemap,sound,minput,moutput",
+                formattimeout=8,
+                input=query,
+                output="JSON",
+                parsetimeout=5,
+                podinfosasync=True,
+                proxycode=code,
+                recalcscheme="parallel",
+                sbsdetails=True,
+                scantimeout=0.5,
+                sponsorcategories=True,
+                statemethod="deploybutton",
+                storesubpodexprs=True)
+        if params:
+            payload.update(params)
         refer_dict = dict(i = query)
         payload_refer = urllib.urlencode(refer_dict)
         refer_url = CODEX_REFER + payload_refer
@@ -94,10 +96,13 @@ class ChatHandler():
                     "Host": HOSTCODEX,
                     "Referer":refer_url
                    }
+        # print "PAYLOAD", payload
         result = requests.get(CODEX_REQUEST2, params = payload, headers = headers)
         print result.text
         json_output = json.loads(result.text)
+        print json_output
         pods = json_output["queryresult"].get("pods")
+        
         try:
             result = pods[1]
             result_info = result["subpods"][0]["plaintext"]
@@ -142,7 +147,6 @@ class ChatHandler():
     def recal_next(self,json_output ,headers,send):
         recal_id = send["recal_id"]
         recal_s = send["recal_s"]
-        # url_start = "https://www4d.wolframalpha"
         url_start = send["url_start"]
         payload_jump = dict(action="recalc",
         duplicatepodaction="read",
@@ -167,7 +171,9 @@ class ChatHandler():
         recal_id = 0
         recal_s = 0
         send = {}
+        output_text = ""
         url_start = "https://www4d.wolframalpha"
+        recal = json_output["queryresult"].get("recalculate")
         try:
             recal = json_output["queryresult"].get("recalculate")
             try:
@@ -314,11 +320,9 @@ class ChatHandler():
             print traceback.format_exc()
         return json.dumps(dict(response=result, question_keywords=""))
 if __name__ == '__main__':
-    #try:
-    #    print "waiting for call...."
-    #    ChatHandler().gm_worker.work()
-    #except Exception as e:
-    #    print traceback.format_exc()
-    #    print "\nError in main !! ",e,"\n"
-    tmp = ChatHandler()
-    print tmp.getAnswer("who invented the bicycle")
+    try:
+       print "waiting for call...."
+       ChatHandler().gm_worker.work()
+    except Exception as e:
+       print traceback.format_exc()
+       print "\nError in main !! ",e,"\n"
